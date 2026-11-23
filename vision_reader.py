@@ -147,7 +147,7 @@ class VisionReader:
         headers = {"Content-Type": "application/json"}
         if self.s.get("api_key"):
             headers["Authorization"] = "Bearer " + self.s["api_key"]
-        r = self.session.post(self.url, json=payload, headers=headers, timeout=config.VISION_TIMEOUT)
+        r = self.session.post(self.url, json=payload, headers=headers, timeout=self.s.get("timeout", config.VISION_TIMEOUT))
         if r.status_code >= 400:
             raise VisionError("HTTP {} dari {}: {}".format(r.status_code, self.url, r.text[:500]))
         return r.json()

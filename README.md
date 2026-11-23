@@ -141,6 +141,13 @@ Model lain: `--model llama3.2-vision` atau ubah `VISION_PROVIDERS["ollama"]["mod
 Server OpenAI-compatible lain (LM Studio, vLLM):
 `$env:AICHESS_BASE_URL = "http://localhost:1234/v1"`.
 
+> **VRAM GPU kecil (≤ 4 GB)?** `qwen2.5vl:7b` bisa gagal dengan
+> `CUDA error: out of memory`. Paksa jalan di CPU (lambat, ±3 menit per
+> pembacaan di CPU i7 generasi ke-4):
+> `ollama create qwen2.5vl-cpu -f ollama/Modelfile.cpu` lalu
+> `python main.py --provider ollama --model qwen2.5vl-cpu`.
+> Untuk PC seperti itu provider cloud (Gemini/OpenAI) jauh lebih praktis.
+>
 > Model lokal kecil lebih sering salah baca papan. Pakai mode **hybrid**
 > (default) supaya salah baca tersaring oleh validasi dan `reconcile()`.
 

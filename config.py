@@ -83,6 +83,7 @@ VISION_PROVIDERS = {
         "base_url": "http://localhost:11434/v1",
         "model": "qwen2.5vl:7b",
         "api_key_env": None,
+        "timeout": 240.0,       # model lokal lebih lambat, apalagi saat pertama dimuat
     },
 }
 

@@ -22,6 +22,7 @@ import time
 from typing import Optional
 
 import chess
+import requests
 
 import config
 import decision_engine as de
@@ -313,6 +314,8 @@ def analyze_image(path: str) -> None:
             log("Tidak ada langkah: {}".format(d.note))
     except de.InvalidPosition as e:
         log("FEN tidak valid: {}".format(e))
+    except requests.RequestException as e:
+        log("Gagal menghubungi Vision LLM: {}".format(e))
     finally:
         decider.close()
 
