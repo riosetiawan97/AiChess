@@ -69,8 +69,10 @@ VISION_PROVIDERS = {
     # Cloud — Google Gemini (endpoint kompatibel OpenAI)
     "gemini": {
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
-        "model": "gemini-2.5-flash",
+        "model": "gemini-3.8-flash",
         "api_key_env": "GEMINI_API_KEY",
+        # dipakai bergiliran jika model utama sibuk (503) / tidak tersedia (404)
+        "fallback_models": ["gemini-flash-latest", "gemini-3.5-flash", "gemini-3.5-flash-lite"],
     },
     # Cloud — OpenRouter / provider OpenAI-compatible lain
     "openrouter": {
@@ -91,9 +93,11 @@ VISION_PROVIDERS = {
 VISION_MODEL_OVERRIDE = os.environ.get("AICHESS_MODEL")          # mis. "gpt-4.1"
 VISION_BASE_URL_OVERRIDE = os.environ.get("AICHESS_BASE_URL")    # mis. LM Studio
 
-VISION_TIMEOUT = 60.0          # detik per request
+VISION_TIMEOUT = 90.0          # detik per request
+VISION_BUSY_RETRIES = 2        # retry per model jika server sibuk (429/503)
+VISION_BUSY_BACKOFF = 2.0      # detik, dikalikan nomor percobaan
 VISION_TEMPERATURE = 0.0
-VISION_MAX_TOKENS = 600
+VISION_MAX_TOKENS = 4000       # model "thinking" butuh ruang lebih
 # "json_schema" (structured output ketat) atau "json_object" (lebih kompatibel).
 # Jika server menolak json_schema, vision_reader otomatis turun ke json_object.
 VISION_RESPONSE_FORMAT = "json_schema"

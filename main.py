@@ -314,7 +314,7 @@ def analyze_image(path: str) -> None:
             log("Tidak ada langkah: {}".format(d.note))
     except de.InvalidPosition as e:
         log("FEN tidak valid: {}".format(e))
-    except requests.RequestException as e:
+    except (requests.RequestException, VisionError) as e:
         log("Gagal menghubungi Vision LLM: {}".format(e))
     finally:
         decider.close()

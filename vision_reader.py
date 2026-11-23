@@ -30,7 +30,9 @@ class VisionResult:
 
 
 class VisionError(RuntimeError):
-    pass
+    def __init__(self, msg: str, status: int = 0):
+        super().__init__(msg)
+        self.status = status
 
 
 def _schema(include_move: bool) -> dict:
@@ -143,14 +145,45 @@ class VisionReader:
         self.session = requests.Session()
         self.calls = 0
 
-    def _post(self, payload: dict) -> dict:
+    def _post_once(self, payload: dict) -> dict:
         headers = {"Content-Type": "application/json"}
         if self.s.get("api_key"):
             headers["Authorization"] = "Bearer " + self.s["api_key"]
-        r = self.session.post(self.url, json=payload, headers=headers, timeout=self.s.get("timeout", config.VISION_TIMEOUT))
+        r = self.session.post(self.url, json=payload, headers=headers,
+                              timeout=self.s.get("timeout", config.VISION_TIMEOUT))
         if r.status_code >= 400:
-            raise VisionError("HTTP {} dari {}: {}".format(r.status_code, self.url, r.text[:500]))
+            raise VisionError("HTTP {} model {}: {}".format(
+                r.status_code, payload.get("model"), r.text[:400]), r.status_code)
         return r.json()
+
+    def _post(self, payload: dict) -> dict:
+        """POST dengan retry untuk server sibuk (429/5xx) + cadangan model lain."""
+        models = [self.s["model"]] + [m for m in self.s.get("fallback_models", []) if m != self.s["model"]]
+        last = None
+        for model in models:
+            payload["model"] = model
+            for attempt in range(config.VISION_BUSY_RETRIES + 1):
+                try:
+                    resp = self._post_once(payload)
+                    if model != self.s["model"]:
+                        print("[vision] model {} sibuk/tidak tersedia, pindah ke {}".format(
+                            self.s["model"], model), flush=True)
+                        self.s["model"] = model  # pakai model yang jalan untuk berikutnya
+                    return resp
+                except VisionError as e:
+                    last = e
+                    if e.status in (429, 500, 502, 503, 504):
+                        if attempt < config.VISION_BUSY_RETRIES:
+                            time.sleep(config.VISION_BUSY_BACKOFF * (attempt + 1))
+                            continue
+                        break  # coba model cadangan
+                    if e.status == 404:
+                        break  # model tidak ada -> coba cadangan
+                    raise
+                except requests.Timeout as e:
+                    last = VisionError("Timeout model {}: {}".format(model, e))
+                    break
+        raise last
 
     def read(self, img: np.ndarray, white_bottom: bool, player_color: str,
              include_move: bool = False, hint_side: Optional[str] = None,
@@ -190,7 +223,7 @@ class VisionReader:
                 break
             except VisionError as e:
                 # Server tidak mendukung json_schema -> coba format berikutnya
-                if fmt != "none" and ("400" in str(e) or "422" in str(e)):
+                if fmt != "none" and e.status in (400, 422):
                     continue
                 raise
         self.calls += 1
