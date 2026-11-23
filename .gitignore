@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.claude/
+.env
+# binary besar - unduh sendiri (lihat README)
+stockfish/
+# file lokal per-PC
+calibration.json
+calibration_check.png
+calibration_preview.png
+config.json
+debug/
+debug_desync.png
+templates/
